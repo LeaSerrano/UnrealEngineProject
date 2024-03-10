@@ -9,6 +9,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include <iostream>
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -84,6 +85,8 @@ void AUnrealEngineProjectCharacter::SetupPlayerInputComponent(class UInputCompon
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUnrealEngineProjectCharacter::Look);
 
+
+		PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AUnrealEngineProjectCharacter::Interact);
 	}
 
 }
@@ -122,6 +125,12 @@ void AUnrealEngineProjectCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AUnrealEngineProjectCharacter::Interact()
+{
+	std::cout << "Key pressed" << std::endl;
+
 }
 
 

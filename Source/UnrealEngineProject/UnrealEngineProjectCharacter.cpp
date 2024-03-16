@@ -9,7 +9,13 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+
+
+#include "Engine/World.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include <iostream>
+#include <Kismet/GameplayStatics.h>
+#include "Engine/StaticMeshActor.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -129,9 +135,81 @@ void AUnrealEngineProjectCharacter::Look(const FInputActionValue& Value)
 
 void AUnrealEngineProjectCharacter::Interact()
 {
-	std::cout << "Key pressed" << std::endl;
+	UE_LOG(LogTemp, Log, TEXT("Key pressed"));
 
+	float detectionRadius = 200.0;
+	FName tag = "LevitatingObject";
+
+	UInteractableLevitating* nearestObjectComponent = FindNearestObject(detectionRadius, tag);
+
+	if (nearestObjectComponent != nullptr) {
+		if (selectedInteractableComponent == nearestObjectComponent) {
+
+			nearestObjectComponent->getBackActorMaterial(selectedInteractableMaterialSave);
+			selectedInteractableComponent = nullptr;
+			selectedInteractableMaterialSave.Reset();
+
+		}
+		else {
+			FString objectName = nearestObjectComponent->GetName();
+			UMaterialInterface* levitatedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/StarterContent/Materials/M_Metal_Rust"));
+			nearestObjectComponent->setLevitatingActorMaterial(levitatedMaterial, selectedInteractableMaterialSave);
+
+			selectedInteractableComponent = nearestObjectComponent;
+		}
+	}
+	else {
+		if (selectedInteractableComponent != nullptr) {
+			selectedInteractableComponent->getBackActorMaterial(selectedInteractableMaterialSave);
+			selectedInteractableComponent = nullptr;
+		}
+	}
 }
+
+UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestObject(float detectionRadius, FName tag)
+{
+
+	FVector characterPosition = GetActorLocation();
+
+	UInteractableLevitating* nearestObjectComponent = nullptr;
+	float minDistance = FLT_MAX;
+
+	TArray<AActor*> actorsInRadius;
+	TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
+	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), characterPosition, detectionRadius, TArray<TEnumAsByte<EObjectTypeQuery>>(), nullptr, TArray<AActor*>(), actorsInRadius);
+
+	for (AActor* actor : actorsInRadius)
+	{
+		if (actor->ActorHasTag(tag))
+		{
+			TArray<UActorComponent*> Components;
+			actor->GetComponents(Components);
+
+			for (UActorComponent* Component : Components)
+			{
+				UInteractableLevitating* levitatedComponent = actor->FindComponentByClass<UInteractableLevitating>();
+				if (levitatedComponent)
+				{
+					float distance = FVector::Distance(characterPosition, actor->GetActorLocation());
+
+					if (distance < minDistance)
+					{
+						minDistance = distance;
+						nearestObjectComponent = levitatedComponent;
+					}
+				}
+			}
+		}
+	}
+
+	if (nearestObjectComponent)
+	{
+		isObjectSelectedForLevitation = !isObjectSelectedForLevitation;
+	}
+
+	return nearestObjectComponent;
+}
+
 
 
 

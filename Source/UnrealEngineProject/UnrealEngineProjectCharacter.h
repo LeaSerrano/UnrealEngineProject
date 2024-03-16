@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "InteractableLevitating.h"
 #include "UnrealEngineProjectCharacter.generated.h"
 
 
@@ -40,6 +41,9 @@ class AUnrealEngineProjectCharacter : public ACharacter
 public:
 	AUnrealEngineProjectCharacter();
 	
+	bool isObjectSelectedForLevitation = false;
+	UInteractableLevitating* selectedInteractableComponent = nullptr;
+	TArray<UMaterialInterface*> selectedInteractableMaterialSave;
 
 protected:
 
@@ -50,6 +54,8 @@ protected:
 	void Look(const FInputActionValue& Value);
 			
 	void Interact();
+
+	UInteractableLevitating* FindNearestObject(float detectionRadius, FName tag);
 
 protected:
 	// APawn interface

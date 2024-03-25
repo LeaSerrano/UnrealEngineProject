@@ -38,8 +38,12 @@ public:
 	AUnrealEngineProjectCharacter();
 	
 	bool isObjectSelectedForLevitation = false;
+	bool isCharacterMoveLocked = false;
+
 	UInteractableLevitating* selectedInteractableComponent = nullptr;
 	TArray<UMaterialInterface*> selectedInteractableMaterialSave;
+	AActor* nearestObject = nullptr;
+	AActor* selectedNearestObject = nullptr;
 
 protected:
 
@@ -51,6 +55,7 @@ protected:
 			
 	void MoveForward(float Value);
 	void MoveRight(float Value);
+	void MoveUp(float Value);
 	void Interact();
 
 	UInteractableLevitating* FindNearestObject(float detectionRadius, FName tag);

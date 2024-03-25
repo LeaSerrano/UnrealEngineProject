@@ -19,6 +19,13 @@ public:
 	void setLevitatingActorMaterial(UMaterialInterface* newMaterial, TArray<UMaterialInterface*>& materialSave);
 	void getBackActorMaterial(TArray<UMaterialInterface*> materialSave);
 
+	bool isOnBottomCollision();
+	void EnableMove();
+	void DisableMove();
+
+	bool isLevitatingModeDisable = false;
+	bool isObjectOnTheGround = false;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

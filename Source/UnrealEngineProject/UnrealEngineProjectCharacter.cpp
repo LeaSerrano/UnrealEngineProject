@@ -90,35 +90,64 @@ void AUnrealEngineProjectCharacter::SetupPlayerInputComponent(class UInputCompon
 
 		PlayerInputComponent->BindAxis("MoveForward", this, &AUnrealEngineProjectCharacter::MoveForward);
 		PlayerInputComponent->BindAxis("MoveRight", this, &AUnrealEngineProjectCharacter::MoveRight);
+		PlayerInputComponent->BindAxis("MoveUp", this, &AUnrealEngineProjectCharacter::MoveUp);
 
 		PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AUnrealEngineProjectCharacter::Interact);
 	}
 
 }
 
-void AUnrealEngineProjectCharacter::MoveForward(float Value)
+void AUnrealEngineProjectCharacter::MoveForward(float value)
 {
-	if (Value != 0.0f && Controller != nullptr)
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+	if (!isCharacterMoveLocked) {
+		if (value != 0.0f && Controller != nullptr)
+		{
+			const FRotator rotation = Controller->GetControlRotation();
+			const FRotator yawRotation(0, rotation.Yaw, 0);
 
-		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			const FVector forwardDirection = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::X);
 
-		AddMovementInput(ForwardDirection, Value);
+			AddMovementInput(forwardDirection, value);
+		}
+	}
+	else {
+		if (nearestObject)
+		{
+			FVector newLocation = nearestObject->GetActorLocation() + FVector(value * 10.f, 0.f, 0.f);
+			nearestObject->SetActorLocation(newLocation, true);
+		}
 	}
 }
 
-void AUnrealEngineProjectCharacter::MoveRight(float Value)
+void AUnrealEngineProjectCharacter::MoveRight(float value)
 {
-	if (Value != 0.0f && Controller != nullptr)
+	if (!isCharacterMoveLocked) {
+		if (value != 0.0f && Controller != nullptr)
+		{
+			const FRotator rotation = Controller->GetControlRotation();
+			const FRotator yawRotation(0, rotation.Yaw, 0);
+
+			const FVector rightDirection = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
+
+			AddMovementInput(rightDirection, value);
+		}
+	}
+	else {
+		if (nearestObject)
+		{
+			FVector newLocation = nearestObject->GetActorLocation() + FVector(0.f, value * 10.f, 0.f);
+			nearestObject->SetActorLocation(newLocation, true);
+		}
+	}
+}
+
+void AUnrealEngineProjectCharacter::MoveUp(float value)
+{
+	if (isCharacterMoveLocked && nearestObject)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-		AddMovementInput(RightDirection, Value);
+		FVector newLocation = nearestObject->GetActorLocation() + FVector(0.f, 0.f, value * 10.f);
+		nearestObject->SetActorLocation(newLocation, true);
+			
 	}
 }
 
@@ -146,24 +175,50 @@ void AUnrealEngineProjectCharacter::Interact()
 
 	if (nearestObjectComponent != nullptr) {
 		if (selectedInteractableComponent == nearestObjectComponent) {
+			selectedInteractableComponent->isLevitatingModeDisable = true;
+
+			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			nearestObjectComponent->DisableMove();
+			isCharacterMoveLocked = false;
 
 			nearestObjectComponent->getBackActorMaterial(selectedInteractableMaterialSave);
+
 			selectedInteractableComponent = nullptr;
 			selectedInteractableMaterialSave.Reset();
-
+			nearestObject = nullptr;
+			nearestObjectComponent = nullptr;
+			selectedNearestObject = nullptr;
 		}
 		else {
+			GetCharacterMovement()->DisableMovement();
+			isCharacterMoveLocked = true;
+
 			FString objectName = nearestObjectComponent->GetName();
 			UMaterialInterface* levitatedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/StarterContent/Materials/M_Metal_Rust"));
 			nearestObjectComponent->setLevitatingActorMaterial(levitatedMaterial, selectedInteractableMaterialSave);
 
 			selectedInteractableComponent = nearestObjectComponent;
+			selectedNearestObject = nearestObject;
+
+			nearestObjectComponent->EnableMove();
+
+			FVector NewLocation = nearestObject->GetActorLocation() + FVector(0.f, 0.f, 50.f);
+			nearestObject->SetActorLocation(NewLocation);
 		}
 	}
 	else {
-		if (selectedInteractableComponent != nullptr) {
+		if (selectedNearestObject != nullptr) {
+			selectedInteractableComponent->isLevitatingModeDisable = true;
+
+			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			selectedInteractableComponent->DisableMove();
+			isCharacterMoveLocked = false;
+
 			selectedInteractableComponent->getBackActorMaterial(selectedInteractableMaterialSave);
+
 			selectedInteractableComponent = nullptr;
+			selectedInteractableMaterialSave.Reset();
+			selectedNearestObject = nullptr;
 		}
 	}
 }
@@ -183,10 +238,10 @@ UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestObject(float 
 	{
 		if (actor->ActorHasTag(tag))
 		{
-			TArray<UActorComponent*> Components;
-			actor->GetComponents(Components);
+			TArray<UActorComponent*> components;
+			actor->GetComponents(components);
 
-			for (UActorComponent* Component : Components)
+			for (UActorComponent* component : components)
 			{
 				UInteractableLevitating* levitatedComponent = actor->FindComponentByClass<UInteractableLevitating>();
 				if (levitatedComponent)
@@ -197,6 +252,7 @@ UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestObject(float 
 					{
 						minDistance = distance;
 						nearestObjectComponent = levitatedComponent;
+						nearestObject = actor;
 					}
 				}
 			}
@@ -206,6 +262,11 @@ UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestObject(float 
 	if (nearestObjectComponent)
 	{
 		isObjectSelectedForLevitation = !isObjectSelectedForLevitation;
+	}
+
+	if (nearestObject)
+	{
+		nearestObject->SetActorEnableCollision(true);
 	}
 
 	return nearestObjectComponent;

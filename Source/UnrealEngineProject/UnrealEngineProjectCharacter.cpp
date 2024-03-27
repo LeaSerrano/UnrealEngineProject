@@ -176,6 +176,7 @@ void AUnrealEngineProjectCharacter::Interact()
 	if (nearestObjectComponent != nullptr) {
 		if (selectedInteractableComponent == nearestObjectComponent) {
 			selectedInteractableComponent->isLevitatingModeDisable = true;
+			selectedInteractableComponent->shouldAddImpulse = false;
 
 			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			nearestObjectComponent->DisableMove();
@@ -209,6 +210,7 @@ void AUnrealEngineProjectCharacter::Interact()
 	else {
 		if (selectedNearestObject != nullptr) {
 			selectedInteractableComponent->isLevitatingModeDisable = true;
+			selectedInteractableComponent->shouldAddImpulse = false;
 
 			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			selectedInteractableComponent->DisableMove();

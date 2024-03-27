@@ -27,16 +27,30 @@ void UInteractableLevitating::TickComponent(float DeltaTime, ELevelTick TickType
 
 	if (isLevitatingModeDisable) {
 
-		EnableMove();
 		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
-		PrimitiveComponent->SetSimulatePhysics(true);
 
-		bool isCollision = isOnBottomCollision();
+		if (!shouldAddImpulse) {
+			EnableMove();
+			PrimitiveComponent->SetSimulatePhysics(true);
+			FVector DownwardImpulse = FVector(0.0f, 0.0f, -1.0f) * 20;
+			PrimitiveComponent->AddImpulse(DownwardImpulse, NAME_None, true);
 
-		if (isCollision) {
-			PrimitiveComponent->SetSimulatePhysics(false);
-			DisableMove();
-			isLevitatingModeDisable = false;
+			shouldAddImpulse = true;
+			levitationStartTime = GetWorld()->GetTimeSeconds();
+		}
+
+		float elapsedTime = GetWorld()->GetTimeSeconds() - levitationStartTime;
+		const float levitationDurationThreshold = 1.0f;
+		const float epsilon = 0.2f;
+
+		if (elapsedTime > levitationDurationThreshold) {
+			float speed = GetOwner()->GetVelocity().Size();
+
+			if (speed < epsilon) {
+				PrimitiveComponent->SetSimulatePhysics(false);
+				DisableMove();
+				isLevitatingModeDisable = false;
+			}
 		}
 	}
 }

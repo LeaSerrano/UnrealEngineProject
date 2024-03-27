@@ -25,6 +25,8 @@ public:
 
 	bool isLevitatingModeDisable = false;
 	bool isObjectOnTheGround = false;
+	bool shouldAddImpulse = false;
+	float levitationStartTime;
 
 protected:
 	// Called when the game starts

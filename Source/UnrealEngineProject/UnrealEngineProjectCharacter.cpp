@@ -114,7 +114,11 @@ void AUnrealEngineProjectCharacter::MoveForward(float value)
 		if (nearestObject)
 		{
 			FVector newLocation = nearestObject->GetActorLocation() + FVector(value * 10.f, 0.f, 0.f);
-			nearestObject->SetActorLocation(newLocation, true);
+
+			FRotator newRotation = nearestObject->GetActorRotation();
+			newRotation.Pitch = FMath::Sin(value * -5.0f);
+
+			nearestObject->SetActorLocationAndRotation(newLocation, newRotation, true);
 		}
 	}
 }
@@ -136,7 +140,11 @@ void AUnrealEngineProjectCharacter::MoveRight(float value)
 		if (nearestObject)
 		{
 			FVector newLocation = nearestObject->GetActorLocation() + FVector(0.f, value * 10.f, 0.f);
-			nearestObject->SetActorLocation(newLocation, true);
+
+			FRotator newRotation = nearestObject->GetActorRotation();
+			newRotation.Roll = FMath::Sin(value * -5.0f);
+
+			nearestObject->SetActorLocationAndRotation(newLocation, newRotation, true);
 		}
 	}
 }
@@ -147,7 +155,6 @@ void AUnrealEngineProjectCharacter::MoveUp(float value)
 	{
 		FVector newLocation = nearestObject->GetActorLocation() + FVector(0.f, 0.f, value * 10.f);
 		nearestObject->SetActorLocation(newLocation, true);
-			
 	}
 }
 
@@ -166,14 +173,25 @@ void AUnrealEngineProjectCharacter::Look(const FInputActionValue& Value)
 
 void AUnrealEngineProjectCharacter::Interact()
 {
-	UE_LOG(LogTemp, Log, TEXT("Key pressed"));
-
 	float detectionRadius = 200.0;
 	FName tag = "LevitatingObject";
 
-	UInteractableLevitating* nearestObjectComponent = FindNearestObject(detectionRadius, tag);
+	nearestObjectComponent = FindNearestObject(detectionRadius, tag);
 
-	if (nearestObjectComponent != nullptr) {
+	if (selectedNearestObject != nullptr) {
+		selectedInteractableComponent->isLevitatingModeDisable = true;
+		selectedInteractableComponent->shouldAddImpulse = false;
+
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		selectedInteractableComponent->DisableMove();
+		isCharacterMoveLocked = false;
+
+		selectedInteractableComponent->getBackActorMaterial();
+
+		selectedInteractableComponent = nullptr;
+		selectedNearestObject = nullptr;
+	}
+	else if (nearestObjectComponent != nullptr) {
 		if (selectedInteractableComponent == nearestObjectComponent) {
 			selectedInteractableComponent->isLevitatingModeDisable = true;
 			selectedInteractableComponent->shouldAddImpulse = false;
@@ -182,45 +200,31 @@ void AUnrealEngineProjectCharacter::Interact()
 			nearestObjectComponent->DisableMove();
 			isCharacterMoveLocked = false;
 
-			nearestObjectComponent->getBackActorMaterial(selectedInteractableMaterialSave);
+			nearestObjectComponent->getBackActorMaterial();
 
 			selectedInteractableComponent = nullptr;
-			selectedInteractableMaterialSave.Reset();
+			selectedNearestObject = nullptr;
 			nearestObject = nullptr;
 			nearestObjectComponent = nullptr;
-			selectedNearestObject = nullptr;
 		}
 		else {
 			GetCharacterMovement()->DisableMovement();
 			isCharacterMoveLocked = true;
 
 			FString objectName = nearestObjectComponent->GetName();
-			UMaterialInterface* levitatedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/StarterContent/Materials/M_Metal_Rust"));
-			nearestObjectComponent->setLevitatingActorMaterial(levitatedMaterial, selectedInteractableMaterialSave);
+			nearestObjectComponent->setLevitatingActorMaterial();
 
 			selectedInteractableComponent = nearestObjectComponent;
+			selectedInteractableComponent->isLevitatingModeEnable = true;
 			selectedNearestObject = nearestObject;
+
+			UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(nearestObjectComponent->GetOwner()->GetRootComponent());
+			PrimitiveComponent->SetSimulatePhysics(false);
 
 			nearestObjectComponent->EnableMove();
 
-			FVector NewLocation = nearestObject->GetActorLocation() + FVector(0.f, 0.f, 50.f);
-			nearestObject->SetActorLocation(NewLocation);
-		}
-	}
-	else {
-		if (selectedNearestObject != nullptr) {
-			selectedInteractableComponent->isLevitatingModeDisable = true;
-			selectedInteractableComponent->shouldAddImpulse = false;
-
-			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-			selectedInteractableComponent->DisableMove();
-			isCharacterMoveLocked = false;
-
-			selectedInteractableComponent->getBackActorMaterial(selectedInteractableMaterialSave);
-
-			selectedInteractableComponent = nullptr;
-			selectedInteractableMaterialSave.Reset();
-			selectedNearestObject = nullptr;
+			FVector newLocation = nearestObject->GetActorLocation() + FVector(0.f, 0.f, 50.f);
+			nearestObject->SetActorLocation(newLocation, true);
 		}
 	}
 }
@@ -228,8 +232,6 @@ void AUnrealEngineProjectCharacter::Interact()
 UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestObject(float detectionRadius, FName tag)
 {
 	FVector characterPosition = GetActorLocation();
-
-	UInteractableLevitating* nearestObjectComponent = nullptr;
 	float minDistance = FLT_MAX;
 
 	TArray<AActor*> actorsInRadius;

@@ -41,7 +41,7 @@ public:
 	bool isCharacterMoveLocked = false;
 
 	UInteractableLevitating* selectedInteractableComponent = nullptr;
-	TArray<UMaterialInterface*> selectedInteractableMaterialSave;
+	UInteractableLevitating* nearestObjectComponent = nullptr;
 	AActor* nearestObject = nullptr;
 	AActor* selectedNearestObject = nullptr;
 

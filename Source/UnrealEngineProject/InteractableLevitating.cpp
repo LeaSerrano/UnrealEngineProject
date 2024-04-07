@@ -8,7 +8,6 @@ UInteractableLevitating::UInteractableLevitating()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
 }
 
 
@@ -16,48 +15,116 @@ UInteractableLevitating::UInteractableLevitating()
 void UInteractableLevitating::BeginPlay()
 {
 	Super::BeginPlay();
-	
-}
 
+	firefliesBlueprintClass = LoadClass<AActor>(nullptr, TEXT("/Script/Engine.Blueprint'/Game/Particles_Wind_Control_System/Blueprints/BP_Particle_Fireflies_2.BP_Particle_Fireflies_2_C'"));
+	ownerActor = GetOwner();
+	USceneComponent* ComponentToAttach = ownerActor->GetRootComponent();
+
+	if (firefliesBlueprintClass)
+	{
+		firefliesActor = GetWorld()->SpawnActor<AActor>(firefliesBlueprintClass);
+	}
+}
 
 // Called every frame
 void UInteractableLevitating::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (isLevitatingModeDisable) {
+	if (isLevitatingModeDisable) 
+	{
+		isLevitatingModeEnable = false;
 
-		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent());
+		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ownerActor->GetRootComponent());
 
-		if (!shouldAddImpulse) {
+		if (!shouldAddImpulse) 
+		{
 			EnableMove();
+
 			PrimitiveComponent->SetSimulatePhysics(true);
+
 			FVector DownwardImpulse = FVector(0.0f, 0.0f, -1.0f) * 20;
 			PrimitiveComponent->AddImpulse(DownwardImpulse, NAME_None, true);
 
 			shouldAddImpulse = true;
+
 			levitationStartTime = GetWorld()->GetTimeSeconds();
 		}
 
 		float elapsedTime = GetWorld()->GetTimeSeconds() - levitationStartTime;
 		const float levitationDurationThreshold = 1.0f;
-		const float epsilon = 0.2f;
+		const float epsilon = 0.1f;
 
-		if (elapsedTime > levitationDurationThreshold) {
-			float speed = GetOwner()->GetVelocity().Size();
+		if (elapsedTime > levitationDurationThreshold) 
+		{
+			float speed = ownerActor->GetVelocity().Size();
 
-			if (speed < epsilon) {
+			if (speed < epsilon) 
+			{
 				PrimitiveComponent->SetSimulatePhysics(false);
 				DisableMove();
 				isLevitatingModeDisable = false;
+
+				if (firefliesActor)
+				{
+					areFirefliesSpawned = false;
+					firefliesActor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+					firefliesActor->Destroy();
+				}
 			}
+		}
+	}
+	
+	if (isLevitatingModeEnable) 
+	{
+		EnableMove();
+
+		FVector newLocation = ownerActor->GetActorLocation();
+		FRotator newRotation = ownerActor->GetActorRotation();
+		float runningTime = ownerActor->GetGameTimeSinceCreation();
+
+		float deltaHeight = (FMath::Sin(runningTime + DeltaTime) - FMath::Sin(runningTime));
+		newLocation.Z += deltaHeight * 10.0f;
+		
+		float deltaRotationRoll = FMath::Cos(runningTime + DeltaTime/4.0) - FMath::Cos(runningTime + DeltaTime);
+		newRotation.Roll += deltaRotationRoll * 10.0f;
+
+		float deltaRotationYaw = (FMath::Sin(runningTime + DeltaTime) - FMath::Sin(runningTime - DeltaTime));
+		newRotation.Yaw += deltaRotationYaw * 5.0f;
+		
+		ownerActor->SetActorLocationAndRotation(newLocation, newRotation, true);
+
+
+		if (!areFirefliesSpawned) 
+		{
+			if (firefliesBlueprintClass)
+			{
+				firefliesActor = GetWorld()->SpawnActor<AActor>(firefliesBlueprintClass);
+			}
+
+			if (firefliesActor)
+			{
+				FVector ActorLocation = ownerActor->GetActorLocation();
+				firefliesActor->SetActorLocation(ActorLocation);
+
+				FAttachmentTransformRules AttachRules = FAttachmentTransformRules(
+					EAttachmentRule::KeepWorld,
+					EAttachmentRule::KeepWorld,
+					EAttachmentRule::KeepWorld,
+					true
+				);
+
+				firefliesActor->AttachToActor(ownerActor, AttachRules);
+			}
+			areFirefliesSpawned = true;
 		}
 	}
 }
 
-void UInteractableLevitating::setLevitatingActorMaterial(UMaterialInterface* newMaterial, TArray<UMaterialInterface*>& materialSave)
+void UInteractableLevitating::setLevitatingActorMaterial()
 {
-	UStaticMeshComponent* meshComponent = Cast<UStaticMeshComponent>(GetOwner()->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+	UMaterialInterface* levitatedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Fantastic_Village_Pack/materials/MI_CLR_emission_purple.MI_CLR_emission_purple'"));
+	UStaticMeshComponent* meshComponent = Cast<UStaticMeshComponent>(ownerActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 
 	if (meshComponent)
 	{
@@ -68,14 +135,14 @@ void UInteractableLevitating::setLevitatingActorMaterial(UMaterialInterface* new
 		{
 			materialSave.Push(materials[i]);
 
-			meshComponent->SetMaterial(i, newMaterial);
+			meshComponent->SetMaterial(i, levitatedMaterial);
 		}
 	}
 }
 
-void UInteractableLevitating::getBackActorMaterial(TArray<UMaterialInterface*> materialSave) {
+void UInteractableLevitating::getBackActorMaterial() {
 
-	UStaticMeshComponent* meshComponent = Cast<UStaticMeshComponent>(GetOwner()->GetComponentByClass(UStaticMeshComponent::StaticClass()));
+	UStaticMeshComponent* meshComponent = Cast<UStaticMeshComponent>(ownerActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 
 	if (meshComponent)
 	{
@@ -86,45 +153,12 @@ void UInteractableLevitating::getBackActorMaterial(TArray<UMaterialInterface*> m
 	}
 }
 
-bool UInteractableLevitating::isOnBottomCollision() {
-
-	AActor* OwnerActor = GetOwner();
-	if (!OwnerActor)
-	{
-		return false;
-	}
-
-	FVector ActorLocation = OwnerActor->GetActorLocation();
-
-	FVector Start = ActorLocation;
-	FVector End = ActorLocation - FVector(0, 0, 10);
-
-	FHitResult HitResult;
-
-	FCollisionQueryParams CollisionParams;
-	CollisionParams.bTraceComplex = true;
-	CollisionParams.bReturnPhysicalMaterial = false;
-
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, CollisionParams))
-	{
-		AActor* HitActor = HitResult.GetActor();
-		if (HitActor)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void UInteractableLevitating::EnableMove()
 {
-	AActor* actor = GetOwner();
-
-	if (actor)
+	if (ownerActor)
 	{
 		TArray<UStaticMeshComponent*> staticMeshComponents;
-		actor->GetComponents<UStaticMeshComponent>(staticMeshComponents);
+		ownerActor->GetComponents<UStaticMeshComponent>(staticMeshComponents);
 
 		for (UStaticMeshComponent* staticMeshComponent : staticMeshComponents)
 		{
@@ -138,12 +172,10 @@ void UInteractableLevitating::EnableMove()
 
 void UInteractableLevitating::DisableMove()
 {
-	AActor* actor = GetOwner();
-
-	if (actor)
+	if (ownerActor)
 	{
 		TArray<UStaticMeshComponent*> staticMeshComponents;
-		actor->GetComponents<UStaticMeshComponent>(staticMeshComponents);
+		ownerActor->GetComponents<UStaticMeshComponent>(staticMeshComponents);
 
 		for (UStaticMeshComponent* staticMeshComponent : staticMeshComponents)
 		{

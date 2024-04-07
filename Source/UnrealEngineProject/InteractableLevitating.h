@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/StaticMeshComponent.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "InteractableLevitating.generated.h"
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class UNREALENGINEPROJECT_API UInteractableLevitating : public UActorComponent
@@ -16,17 +18,25 @@ public:
 	// Sets default values for this component's properties
 	UInteractableLevitating();
 
-	void setLevitatingActorMaterial(UMaterialInterface* newMaterial, TArray<UMaterialInterface*>& materialSave);
-	void getBackActorMaterial(TArray<UMaterialInterface*> materialSave);
+	void setLevitatingActorMaterial();
+	void getBackActorMaterial();
 
-	bool isOnBottomCollision();
 	void EnableMove();
 	void DisableMove();
 
+	bool isLevitatingModeEnable = false;
 	bool isLevitatingModeDisable = false;
 	bool isObjectOnTheGround = false;
 	bool shouldAddImpulse = false;
 	float levitationStartTime;
+	bool isAnimationMovingUp = true;
+
+	bool areFirefliesSpawned = false;
+	UClass* firefliesBlueprintClass;
+	AActor* firefliesActor;
+
+	AActor* ownerActor;
+	TArray<UMaterialInterface*> materialSave;
 
 protected:
 	// Called when the game starts
@@ -35,6 +45,5 @@ protected:
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 		
 };

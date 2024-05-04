@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "InteractableLevitating.h"
+#include "ShootingProjectile.h"
 #include "UnrealEngineProjectCharacter.generated.h"
 
 
@@ -44,6 +45,7 @@ public:
 	UInteractableLevitating* nearestObjectComponent = nullptr;
 	AActor* nearestObject = nullptr;
 	AActor* selectedNearestObject = nullptr;
+	UAnimMontage* interactAnim;
 
 protected:
 
@@ -57,8 +59,10 @@ protected:
 	void MoveRight(float Value);
 	void MoveUp(float Value);
 	void Interact();
+	void Shoot();
 
-	UInteractableLevitating* FindNearestObject(float detectionRadius, FName tag);
+	UInteractableLevitating* FindNearestLevitatingObject(float detectionRadius, FName tag);
+	AActor* FindNearestShootableObject(float detectionRadius, FName tag);
 
 protected:
 	// APawn interface

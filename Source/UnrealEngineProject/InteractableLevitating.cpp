@@ -19,11 +19,6 @@ void UInteractableLevitating::BeginPlay()
 	firefliesBlueprintClass = LoadClass<AActor>(nullptr, TEXT("/Script/Engine.Blueprint'/Game/Particles_Wind_Control_System/Blueprints/BP_Particle_Fireflies_2.BP_Particle_Fireflies_2_C'"));
 	ownerActor = GetOwner();
 	USceneComponent* ComponentToAttach = ownerActor->GetRootComponent();
-
-	if (firefliesBlueprintClass)
-	{
-		firefliesActor = GetWorld()->SpawnActor<AActor>(firefliesBlueprintClass);
-	}
 }
 
 // Called every frame

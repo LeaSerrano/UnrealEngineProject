@@ -93,6 +93,7 @@ void AUnrealEngineProjectCharacter::SetupPlayerInputComponent(class UInputCompon
 		PlayerInputComponent->BindAxis("MoveUp", this, &AUnrealEngineProjectCharacter::MoveUp);
 
 		PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AUnrealEngineProjectCharacter::Interact);
+		PlayerInputComponent->BindAction("Shoot", IE_Pressed, this, &AUnrealEngineProjectCharacter::Shoot);
 	}
 
 }
@@ -176,7 +177,7 @@ void AUnrealEngineProjectCharacter::Interact()
 	float detectionRadius = 200.0;
 	FName tag = "LevitatingObject";
 
-	nearestObjectComponent = FindNearestObject(detectionRadius, tag);
+	nearestObjectComponent = FindNearestLevitatingObject(detectionRadius, tag);
 
 	if (selectedNearestObject != nullptr) {
 		selectedInteractableComponent->isLevitatingModeDisable = true;
@@ -229,7 +230,7 @@ void AUnrealEngineProjectCharacter::Interact()
 	}
 }
 
-UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestObject(float detectionRadius, FName tag)
+UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestLevitatingObject(float detectionRadius, FName tag)
 {
 	FVector characterPosition = GetActorLocation();
 	float minDistance = FLT_MAX;
@@ -276,7 +277,51 @@ UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestObject(float 
 	return nearestObjectComponent;
 }
 
+void AUnrealEngineProjectCharacter::Shoot()
+{
+	FVector SpawnLocation = GetActorLocation();
+	FRotator SpawnRotation = GetActorRotation();
 
+	FVector ForwardVector = GetActorForwardVector();
 
+	float Distance = 50.0f;
+	float HeightOffset = 50.0f;
 
+	FVector ObjectPosition = SpawnLocation + ForwardVector * Distance + FVector(0.0f, 0.0f, HeightOffset);
 
+	AShootingProjectile* MyProjectile = GetWorld()->SpawnActor<AShootingProjectile>(AShootingProjectile::StaticClass(), ObjectPosition, SpawnRotation);
+	
+	AActor* nearestShootableObject = FindNearestShootableObject(200.0f, "ShootableObject");
+
+	FVector ImpulseDirection;
+
+	ImpulseDirection = GetActorForwardVector();
+	MyProjectile->FireInDirection(ImpulseDirection);
+}
+
+AActor* AUnrealEngineProjectCharacter::FindNearestShootableObject(float detectionRadius, FName tag)
+{
+	FVector characterPosition = GetActorLocation();
+	float minDistance = FLT_MAX;
+	AActor* nearestShootableObject = nullptr;
+
+	TArray<AActor*> actorsInRadius;
+	TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
+	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), characterPosition, detectionRadius, TArray<TEnumAsByte<EObjectTypeQuery>>(), nullptr, TArray<AActor*>(), actorsInRadius);
+
+	for (AActor* actor : actorsInRadius)
+	{
+		if (actor->ActorHasTag(tag))
+		{
+			float distance = FVector::Distance(characterPosition, actor->GetActorLocation());
+
+			if (distance < minDistance)
+			{
+				minDistance = distance;
+				nearestShootableObject = actor;
+			}
+		}
+	}
+
+	return nearestShootableObject;
+}

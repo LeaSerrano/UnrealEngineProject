@@ -35,6 +35,18 @@ class AUnrealEngineProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	FName levitatingObjectTag = "LevitatingObject";
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	FName shootableObjectTag = "ShootableObject";
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction", meta = (AllowPrivateAccess = "true"))
+	float detectionRadius = 200.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shoot", meta = (AllowPrivateAccess = "true"))
+	UClass* shootClass;
+
 public:
 	AUnrealEngineProjectCharacter();
 	
@@ -61,8 +73,8 @@ protected:
 	void Interact();
 	void Shoot();
 
-	UInteractableLevitating* FindNearestLevitatingObject(float detectionRadius, FName tag);
-	AActor* FindNearestShootableObject(float detectionRadius, FName tag);
+	UInteractableLevitating* FindNearestLevitatingObject(FName tag);
+	AActor* FindNearestShootableObject(FName tag);
 
 protected:
 	// APawn interface

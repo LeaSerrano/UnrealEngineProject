@@ -174,10 +174,7 @@ void AUnrealEngineProjectCharacter::Look(const FInputActionValue& Value)
 
 void AUnrealEngineProjectCharacter::Interact()
 {
-	float detectionRadius = 200.0;
-	FName tag = "LevitatingObject";
-
-	nearestObjectComponent = FindNearestLevitatingObject(detectionRadius, tag);
+	nearestObjectComponent = FindNearestLevitatingObject(levitatingObjectTag);
 
 	if (selectedNearestObject != nullptr) {
 		selectedInteractableComponent->isLevitatingModeDisable = true;
@@ -230,7 +227,7 @@ void AUnrealEngineProjectCharacter::Interact()
 	}
 }
 
-UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestLevitatingObject(float detectionRadius, FName tag)
+UInteractableLevitating* AUnrealEngineProjectCharacter::FindNearestLevitatingObject(FName tag)
 {
 	FVector characterPosition = GetActorLocation();
 	float minDistance = FLT_MAX;
@@ -289,9 +286,9 @@ void AUnrealEngineProjectCharacter::Shoot()
 
 	FVector ObjectPosition = SpawnLocation + ForwardVector * Distance + FVector(0.0f, 0.0f, HeightOffset);
 
-	AShootingProjectile* MyProjectile = GetWorld()->SpawnActor<AShootingProjectile>(AShootingProjectile::StaticClass(), ObjectPosition, SpawnRotation);
-	
-	AActor* nearestShootableObject = FindNearestShootableObject(200.0f, "ShootableObject");
+	AShootingProjectile* MyProjectile = GetWorld()->SpawnActor< AShootingProjectile>(shootClass, ObjectPosition, SpawnRotation);
+
+	AActor* nearestShootableObject = FindNearestShootableObject(shootableObjectTag);
 
 	FVector ImpulseDirection;
 
@@ -299,7 +296,7 @@ void AUnrealEngineProjectCharacter::Shoot()
 	MyProjectile->FireInDirection(ImpulseDirection);
 }
 
-AActor* AUnrealEngineProjectCharacter::FindNearestShootableObject(float detectionRadius, FName tag)
+AActor* AUnrealEngineProjectCharacter::FindNearestShootableObject(FName tag)
 {
 	FVector characterPosition = GetActorLocation();
 	float minDistance = FLT_MAX;

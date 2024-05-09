@@ -37,17 +37,15 @@ AShootingProjectile::AShootingProjectile()
     if (!ProjectileMeshComponent)
     {
         ProjectileMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMeshComponent"));
-        UStaticMesh* shootingProjectileMesh = LoadObject<UStaticMesh>(nullptr, TEXT("/Game/LevelPrototyping/Meshes/Sphere.Sphere"));
+
         ProjectileMeshComponent->SetStaticMesh(shootingProjectileMesh);
 
-        UMaterialInterface* sphereMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Fantastic_Village_Pack/materials/MI_CLR_emission_purple.MI_CLR_emission_purple'"));
         if (sphereMaterial)
         {
             ProjectileMaterialInstance = UMaterialInstanceDynamic::Create(sphereMaterial, ProjectileMeshComponent);
         }
         ProjectileMeshComponent->SetMaterial(0, ProjectileMaterialInstance);
 
-        ProjectileMeshComponent->SetRelativeScale3D(FVector(0.09f, 0.09f, 0.09f));
         ProjectileMeshComponent->SetupAttachment(RootComponent);
     }
 }
@@ -55,9 +53,27 @@ AShootingProjectile::AShootingProjectile()
 // Called when the game starts or when spawned
 void AShootingProjectile::BeginPlay()
 {
-	Super::BeginPlay();
+    Super::BeginPlay();
 
-	SetLifeSpan(1.5f);
+    SetLifeSpan(1.5f);
+
+    if (firefliesBlueprintClass)
+    {
+        firefliesActor = GetWorld()->SpawnActor<AActor>(firefliesBlueprintClass);
+
+        FVector ActorLocation = GetActorLocation();
+        firefliesActor->SetActorLocation(ActorLocation);
+
+        FAttachmentTransformRules AttachRules = FAttachmentTransformRules(
+            EAttachmentRule::KeepWorld,
+            EAttachmentRule::KeepWorld,
+            EAttachmentRule::KeepWorld,
+            true
+        );
+
+        firefliesActor->AttachToActor(this, AttachRules);
+        firefliesActor->SetLifeSpan(1.5f);
+    }
 }
 
 // Called every frame
@@ -75,6 +91,9 @@ void AShootingProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* Other
 {
     if (OtherActor->ActorHasTag("ShootableObject")) {
         OtherActor->Destroy();
+
+        firefliesActor->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+        firefliesActor->Destroy();
 
         Destroy();
     }

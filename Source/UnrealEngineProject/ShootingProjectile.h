@@ -10,10 +10,19 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "ShootingProjectile.generated.h"
 
-UCLASS()
+UCLASS(config = Game)
 class UNREALENGINEPROJECT_API AShootingProjectile : public AActor
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh", meta = (AllowPrivateAccess = "true"))
+	UStaticMesh* shootingProjectileMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh", meta = (AllowPrivateAccess = "true"))
+	UMaterialInterface* sphereMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VFX", meta = (AllowPrivateAccess = "true"))
+	UClass* firefliesBlueprintClass;
 	
 public:	
 	// Sets default values for this actor's properties

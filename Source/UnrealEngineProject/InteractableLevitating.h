@@ -9,10 +9,16 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "InteractableLevitating.generated.h"
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(config = Game)
 class UNREALENGINEPROJECT_API UInteractableLevitating : public UActorComponent
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VFX", meta = (AllowPrivateAccess = "true"))
+	UClass* firefliesBlueprintClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VFX", meta = (AllowPrivateAccess = "true"))
+	UMaterialInterface* levitatedMaterial;
 
 public:	
 	// Sets default values for this component's properties
@@ -32,8 +38,8 @@ public:
 	bool isAnimationMovingUp = true;
 
 	bool areFirefliesSpawned = false;
-	UClass* firefliesBlueprintClass;
 	AActor* firefliesActor;
+	//UClass* firefliesBlueprintClass;
 
 	AActor* ownerActor;
 	TArray<UMaterialInterface*> materialSave;

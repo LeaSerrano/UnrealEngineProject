@@ -16,7 +16,6 @@ void UInteractableLevitating::BeginPlay()
 {
 	Super::BeginPlay();
 
-	firefliesBlueprintClass = LoadClass<AActor>(nullptr, TEXT("/Script/Engine.Blueprint'/Game/Particles_Wind_Control_System/Blueprints/BP_Particle_Fireflies_2.BP_Particle_Fireflies_2_C'"));
 	ownerActor = GetOwner();
 	USceneComponent* ComponentToAttach = ownerActor->GetRootComponent();
 }
@@ -118,7 +117,6 @@ void UInteractableLevitating::TickComponent(float DeltaTime, ELevelTick TickType
 
 void UInteractableLevitating::setLevitatingActorMaterial()
 {
-	UMaterialInterface* levitatedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Fantastic_Village_Pack/materials/MI_CLR_emission_purple.MI_CLR_emission_purple'"));
 	UStaticMeshComponent* meshComponent = Cast<UStaticMeshComponent>(ownerActor->GetComponentByClass(UStaticMeshComponent::StaticClass()));
 
 	if (meshComponent)
